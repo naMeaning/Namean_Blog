@@ -136,6 +136,64 @@ def strip_markdown(text: str) -> str:
     return text.strip()
 
 
+def escape_html(value: str) -> str:
+    return (
+        value.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#x27;")
+    )
+
+
+def render_markdown_to_html(text: str) -> str:
+    lines = text.splitlines()
+    html_lines: List[str] = []
+    in_list = False
+    in_code_block = False
+    for raw_line in lines:
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if in_code_block:
+                html_lines.append("</code></pre>")
+                in_code_block = False
+            else:
+                html_lines.append("<pre><code>")
+                in_code_block = True
+            continue
+        if in_code_block:
+            html_lines.append(escape_html(line))
+            continue
+        if stripped.startswith("- "):
+            if not in_list:
+                html_lines.append("<ul>")
+                in_list = True
+            html_lines.append(f"<li>{escape_html(stripped[2:].strip())}</li>")
+            continue
+        if in_list and stripped == "":
+            html_lines.append("</ul>")
+            in_list = False
+            continue
+        if stripped == "":
+            continue
+        if stripped.startswith("### "):
+            html_lines.append(f"<h3>{escape_html(stripped[4:])}</h3>")
+            continue
+        if stripped.startswith("## "):
+            html_lines.append(f"<h2>{escape_html(stripped[3:])}</h2>")
+            continue
+        if stripped.startswith("# "):
+            html_lines.append(f"<h1>{escape_html(stripped[2:])}</h1>")
+            continue
+        html_lines.append(f"<p>{escape_html(stripped)}</p>")
+    if in_list:
+        html_lines.append("</ul>")
+    if in_code_block:
+        html_lines.append("</code></pre>")
+    return "\n".join(html_lines)
+
+
 def build_tags(entries: List[ContentEntry]) -> List[Dict[str, Any]]:
     counts: Dict[str, int] = {}
     for entry in entries:
@@ -156,6 +214,13 @@ def to_json_entry(entry: ContentEntry) -> Dict[str, Any]:
         "tags": entry.tags,
         "draft": entry.draft,
         "url": entry.url,
+    }
+
+
+def to_detail_json_entry(entry: ContentEntry) -> Dict[str, Any]:
+    return {
+        **to_json_entry(entry),
+        "content_html": render_markdown_to_html(entry.body),
     }
 
 
@@ -274,11 +339,15 @@ def main() -> None:
 
     posts_data = [to_json_entry(entry) for entry in posts]
     projects_data = [to_json_entry(entry) for entry in projects]
+    posts_detail = [to_detail_json_entry(entry) for entry in posts]
+    projects_detail = [to_detail_json_entry(entry) for entry in projects]
     tags_data = build_tags(all_entries)
     search_index = build_search_index(all_entries)
 
     write_json(DATA_DIR / "posts.json", posts_data)
     write_json(DATA_DIR / "projects.json", projects_data)
+    write_json(DATA_DIR / "posts_detail.json", posts_detail)
+    write_json(DATA_DIR / "projects_detail.json", projects_detail)
     write_json(DATA_DIR / "tags.json", tags_data)
     write_json(DATA_DIR / "search_index.json", search_index)
 

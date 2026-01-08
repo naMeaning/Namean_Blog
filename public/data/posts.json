@@ -1,0 +1,15 @@
+[
+  {
+    "slug": "hello-world",
+    "title": "Hello World",
+    "date": "2024-01-15",
+    "summary": "用于演示博客文章的 frontmatter 规范。",
+    "tags": [
+      "intro",
+      "hello",
+      "demo"
+    ],
+    "draft": false,
+    "url": "/posts/hello-world/"
+  }
+]
