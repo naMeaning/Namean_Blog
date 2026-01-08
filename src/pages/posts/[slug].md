@@ -13,6 +13,7 @@ title: Post Detail
 
 <script type="module">
   import { getContentDetail } from "../../lib/api.ts";
+  import { applyDetailSeo } from "../../lib/seo.ts";
 
   const slug = window.location.pathname.split("/").filter(Boolean).pop();
   const titleEl = document.getElementById("detail-title");
@@ -32,6 +33,13 @@ title: Post Detail
         )
         .join("");
       contentEl.innerHTML = detail.content_html;
+      const description = detail.summary || `${detail.title} 的详细内容。`;
+      applyDetailSeo({
+        title: detail.title,
+        description,
+        url: `${window.location.origin}${detail.url}`,
+        type: "article",
+      });
     } else {
       titleEl.textContent = "未找到文章";
     }

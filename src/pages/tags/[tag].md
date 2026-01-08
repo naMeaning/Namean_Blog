@@ -19,6 +19,7 @@ title: Tag Detail
 
 <script type="module">
   import { getContentByTag } from "../../lib/api.ts";
+  import { applyDetailSeo } from "../../lib/seo.ts";
 
   const tag = decodeURIComponent(
     window.location.pathname.split("/").filter(Boolean).pop() || "",
@@ -61,6 +62,14 @@ title: Tag Detail
   projectsEl.innerHTML = projects.length
     ? renderCards(projects)
     : "<p>暂无项目。</p>";
+
+  const description = `共 ${posts.length} 篇文章，${projects.length} 个项目。`;
+  applyDetailSeo({
+    title: `Tag: ${tag}`,
+    description,
+    url: window.location.href,
+    type: "website",
+  });
 </script>
 
 <style>
